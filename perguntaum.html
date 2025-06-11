@@ -1,0 +1,63 @@
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./css/pergunta.css">
+  <link rel="stylesheet" href="./css/coracao.css">
+  <title>Pergunta 1</title>
+  <style>
+    
+  </style>
+</head>
+
+<body>
+
+  <section>
+    <div class="title">
+      <h1 class="box">Teste para saber se é meu amoreco</h1>
+    </div>
+    <div class="pergunta centralizado">
+      <h1 style="text-align: center;">Quando começamos a namorar?</h1>
+
+      <div class="alternativas">
+
+        <button onclick="responder('errada')">27/04</button>
+        <button onclick="responder('certa')">18/04</button>
+        <button onclick="responder('errada')">10/04</button>
+        <button onclick="responder('errada')">23/11</button>
+      </div>
+
+
+
+    </div>
+  </section>
+
+  <script>
+    function responder(resposta) {
+      if (resposta === 'errada') {
+        alert("Essa página é para o meu amoreco, saia AGORA!")
+        window.location.href = "perguntaum.html"; // Página de parabéns, ou próxima pergunta
+      } else {
+        window.location.href = "perguntadois.html"; // Volta pra principal
+      }
+    }
+  </script>
+  <script>
+    function criarCoracao() {
+      const heart = document.createElement("div");
+      heart.classList.add("heart");
+      heart.style.left = Math.random() * 90 + "vw";
+      heart.style.animationDuration = 2 + Math.random() * 3 + "s";
+      document.body.appendChild(heart);
+
+      setTimeout(() => {
+        heart.remove();
+      }, 5000);
+    }
+
+    setInterval(criarCoracao, 300);
+  </script>
+</body>
+
+</html>
