@@ -3,74 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/perguntaquatro.css">
+    <link rel="stylesheet" href="../css/pergunta.css">
     <link rel="stylesheet" href="../css/coracao.css">
-    <title>Pergunta 1</title>
-    <style>
+    <title>Pergunta 4</title>
+  <style>
+    
+        
+    
 
-    </style>
+    .alternativas audio {
+      width: 150px;
+    }
+
+    .botoes {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+    }
+
+    .botoes button {
+      margin-top: 50px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  
+  </style>
 </head>
-
 <body>
-
-    <section>
-        <div class="title">
-            <h1 class="box">Teste para saber se é meu amoreco</h1>
+       <div class="title">
+            <h1 class="box">Essa só você sabe</h1>
         </div>
-        <div class="pergunta centralizado">
+        <div class="pergunta centralizado" style="height: 350px;">
             <h1 style="text-align: center;">Qual a nossa música?</h1>
 
-            <div class="alternativas">
+            <div class="alternativas" >
 
-                <button onclick="responder('errada')"><iframe id="player1"  
-      src="https://www.youtube.com/embed/d1INCiRKLyw?enablejsapi=1&controls=1"
-      frameborder="0" allowfullscreen></iframe>
-                </button>
-                <button onclick="responder('errada')"> <iframe id="player2"  
-      src="https://www.youtube.com/embed/ImzmD8GhXC8?enablejsapi=1&controls=1"
-      frameborder="0" allowfullscreen></iframe></button>
-
-                <button onclick="responder('errada')">  <iframe id="player3"  
-      src="https://www.youtube.com/embed/d1INCiRKLyw?enablejsapi=1&controls=1"
-      frameborder="0" allowfullscreen></iframe></button>
-
-                <button onclick="responder('certo')"><iframe id="player4"  
-      src="https://www.youtube.com/embed/d1INCiRKLyw?enablejsapi=1&controls=1"
-      frameborder="0" allowfullscreen></iframe></button>
+                <button onclick="responder('errada')">1º Música<audio id="audio1" src="musicas/tercadetarde.mpeg"></audio>
+</button>
+                <button onclick="responder('errada')">2º Música<audio id="audio2" src="./musicas/poesia.mpeg"></audio>
+</button>
+                <button onclick="responder('errada')">3º Música<audio id="audio3" src="./musicas/outrodia.mpeg"></audio>
+</button>
+                <button onclick="responder('certo')">4º Música<audio id="audio4" src="./musicas/olhos.mpeg"></audio>
+</button>
             </div>
+ <div class="botoes">
+    <button onclick="toggleAudio(0)">Tocar Musica 1</button>
+    <button onclick="toggleAudio(1)">Tocar Musica 2</button>
+    <button onclick="toggleAudio(2)">Tocar Musica 3</button>
+    <button onclick="toggleAudio(3)">Tocar Musica 4</button>
+  </div>
 
-
-
-        </div>
-    </section>
-    
-    
-
-    <script>
+   <script>
         function responder(resposta) {
             if (resposta === 'errada') {
                 alert("Essa página é para o meu amoreco, saia AGORA!")
                 window.location.href = "index.html"; // Página de parabéns, ou próxima pergunta
             } else {
-                window.location.href = "perguntatres.html"; // Volta pra principal
+                window.location.href = "testefinal.html"; // Volta pra principal
             }
         }
     </script>
-    <script>
-        function criarCoracao() {
-            const heart = document.createElement("div");
-            heart.classList.add("heart");
-            heart.style.left = Math.random() * 90 + "vw";
-            heart.style.animationDuration = 2 + Math.random() * 3 + "s";
-            document.body.appendChild(heart);
 
-            setTimeout(() => {
-                heart.remove();
-            }, 5000);
-        }
+  <script>
+    const audios = [
+      document.getElementById('audio1'),
+      document.getElementById('audio2'),
+      document.getElementById('audio3'),
+      document.getElementById('audio4')
+    ];
 
-        setInterval(criarCoracao, 300);
-    </script>
+    function toggleAudio(index) {
+      const audio = audios[index];
+
+      // Se estiver tocando, pausa
+      if (!audio.paused) {
+        audio.pause();
+      } else {
+        // Pausa todos os outros
+        audios.forEach((a, i) => {
+          if (i !== index) a.pause();
+        });
+
+        audio.play();
+      }
+    }
+  </script>
 </body>
 
 </html>

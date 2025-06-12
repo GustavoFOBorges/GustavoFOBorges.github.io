@@ -14,9 +14,9 @@ section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem; /* espaçamento entre título e pergunta */
+  gap: 3rem; /* espaçamento entre título e pergunta */
   width: 100%;
-  max-width: 500px;
+  
 }
 
 .title {
@@ -36,7 +36,7 @@ section {
 
 .pergunta {
   width: 400px;
-  height: 600px;
+  height: 350px;
   background-color: black;
   border-radius: 50px;
   color: white;
@@ -47,10 +47,7 @@ section {
   padding: 20px;
   box-sizing: border-box;
 
-    & img{
-      
-      width: 100px;
-    }
+   
 }
 
 .alternativas {
@@ -58,29 +55,22 @@ section {
   grid-template-columns: 1fr 1fr  ;
   gap: 20px;
   width: 100%;
-  height: 600px;
   max-width: 400px;
-  
+  margin-top: 20px;
   justify-items: center;
 }
 
 .alternativas button {
-  padding: 15px;
+ 
   font-size: 18px;
   border: none;
   border-radius: 8px;
   background-color: #ffb6c1;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  width: 150px;
+  width: 100%;
   max-width: 180px;
-  height: 200px;
-  
-  & iframe{
-            width: 120px;
-            height: 150px;
-            padding: 0px;
-        }
+ 
 }
 
 .alternativas button:hover {
