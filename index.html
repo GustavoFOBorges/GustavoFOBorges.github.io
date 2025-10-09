@@ -1,63 +1,118 @@
-<html lang="pt">
-
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="./css/pergunta.css">
-  <link rel="stylesheet" href="./css/coracao.css">
-  <title>Pergunta 1</title>
-  <style>
-    
-  </style>
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo Lógico | TecLab </title>
+    <style>
+         
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;  
+            padding: 20px;  
+            background-color: #f4f4f9;
+        }
 
+        h1 {
+            color: #333;
+            text-align: center;  
+        }
+
+        .mermaid-container {
+            width: 95%; 
+            max-width: 1600px;  
+            margin: 20px auto;  
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: auto;  
+        }
+        
+        .mermaid-container svg {
+             transform: scale(1.3); 
+            transform-origin: top left;
+        }
+    </style>
+</head>
 <body>
 
-  <section>
-    <div class="title">
-      <h1 class="box">Teste para saber se é meu amoreco</h1>
-    </div>
-    <div class="pergunta centralizado">
-      <h1 style="text-align: center;">Quando começamos a namorar?</h1>
+     
 
-      <div class="alternativas">
-
-        <button onclick="responder('errada')">27/04</button>
-        <button onclick="responder('certa')">18/04</button>
-        <button onclick="responder('errada')">10/04</button>
-        <button onclick="responder('errada')">23/11</button>
-      </div>
-
-
-
-    </div>
-  </section>
-
-  <script>
-    function responder(resposta) {
-      if (resposta === 'errada') {
-        alert("Essa página é para o meu amoreco, saia AGORA!")
-        window.location.href = "./paginas/index.html"; // Página de parabéns, ou próxima pergunta
-      } else {
-        window.location.href = "./paginas/perguntadois.html"; // Volta pra principal
-      }
+    <div class="mermaid-container">
+        <pre class="mermaid">
+erDiagram
+    Usuarios {
+        int id_usuario PK
+        varchar nome_completo
+        varchar email
+        int cpf
+        varchar senha_hash
+        int id_curso FK
+        int id_tipo_participacao FK
+        datetime data_criacao
     }
-  </script>
-  <script>
-    function criarCoracao() {
-      const heart = document.createElement("div");
-      heart.classList.add("heart");
-      heart.style.left = Math.random() * 90 + "vw";
-      heart.style.animationDuration = 2 + Math.random() * 3 + "s";
-      document.body.appendChild(heart);
-
-      setTimeout(() => {
-        heart.remove();
-      }, 5000);
+    Cursos {
+        int id_curso PK
+        varchar nome_curso
+    }
+    TiposParticipacao {
+        int id_tipo PK
+        varchar descricao
+    }
+    Atividades {
+        int id_atividade PK
+        varchar nome
+        text descricao
+        datetime data_hora_inicio
+        datetime data_hora_fim
+        int numero_vagas
+        int id_local FK
+        int id_responsavel FK
+    }
+    Locais {
+        int id_local PK
+        varchar nome_local
+        int capacidade
+    }
+    Inscricoes {
+        int id_inscricao PK
+        int id_usuario FK
+        int id_atividade FK
+        enum status
+        datetime data_inscricao
+    }
+    Presencas {
+        int id_presenca PK
+        int id_inscricao FK
+        datetime data_hora_entrada
+        datetime data_hora_saida
+    }
+    PerfisAcesso {
+        int id_perfil PK
+        varchar nome_perfil
+    }
+    UsuariosPerfis {
+        int id_usuario PK, FK
+        int id_perfil PK, FK
     }
 
-    setInterval(criarCoracao, 300);
-  </script>
+    Usuarios ||--o{ Inscricoes : "realiza"
+    Atividades ||--o{ Inscricoes : "recebe"
+    Usuarios }o--|| Cursos : "pertence a"
+    Usuarios }o--|| TiposParticipacao : "é do tipo"
+    Atividades }o--|| Locais : "ocorre em"
+    Atividades }o--|| Usuarios : "é organizada por"
+    Inscricoes ||--o{ Presencas : "gera"
+    Usuarios ||--|{ UsuariosPerfis : "possui"
+    PerfisAcesso ||--|{ UsuariosPerfis : "é atribuído a"
+        </pre>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
 </body>
-
 </html>
