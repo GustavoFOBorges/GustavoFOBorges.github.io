@@ -3,17 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Educacional</title>
-
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-
-  <!-- Chart.js -->
+  <title>Dashboard EduMais EAD</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     body {
       background-color: #f8f9fa;
@@ -21,7 +13,7 @@
     }
     .kpi-card {
       border-radius: 1rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       text-align: center;
       padding: 1.5rem;
       background: white;
@@ -36,7 +28,7 @@
       border-radius: 1rem;
       padding: 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
     }
     h2 {
       font-weight: 600;
@@ -47,62 +39,52 @@
     }
   </style>
 </head>
-
 <body class="p-4">
   <div class="container">
-    <h1 class="text-center mb-4">📊 Dashboard Educacional</h1>
+    <h1 class="text-center mb-4">📊 Dashboard S&OP - EduMais EAD</h1>
 
     <!-- KPIs -->
     <div class="row g-3 mb-4">
       <div class="col-md-3">
         <div class="kpi-card">
-          <div class="kpi-label">Total de Matrículas</div>
-          <div class="kpi-value">450</div>
+          <div class="kpi-label">Matrículas Atuais</div>
+          <div class="kpi-value">600</div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="kpi-card">
-          <div class="kpi-label">Taxa Média de Conversão</div>
-          <div class="kpi-value">22.3%</div>
+          <div class="kpi-label">Taxa de Conversão</div>
+          <div class="kpi-value">4,6%</div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="kpi-card">
-          <div class="kpi-label">CAC Médio (R$)</div>
-          <div class="kpi-value">165</div>
+          <div class="kpi-label">CAC Médio</div>
+          <div class="kpi-value">R$ 300,00</div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="kpi-card">
-          <div class="kpi-label">Receita Total</div>
-          <div class="kpi-value">R$ 405.000</div>
+          <div class="kpi-label">Receita Mensal</div>
+          <div class="kpi-value">R$ 149.400,00</div>
         </div>
       </div>
     </div>
 
     <!-- Gráficos -->
     <div class="chart-container">
-      <h2 class="mb-3">📈 Evolução de Matrículas</h2>
+      <h2 class="mb-3">📈 Evolução de Matrículas (Projeção 3 Meses)</h2>
       <canvas id="matriculasChart"></canvas>
-      <p class="mt-2 text-secondary">
-        <span class="legend-label text-primary">🟦 Matrículas:</span> número total de alunos matriculados em cada mês.
-      </p>
     </div>
 
     <div class="chart-container">
-      <h2 class="mb-3">🎯 Taxa de Conversão (%)</h2>
-      <canvas id="conversionChart"></canvas>
-      <p class="mt-2 text-secondary">
-        <span class="legend-label text-success">🟩 Conversão:</span> percentual de leads que se tornaram alunos.
-      </p>
+      <h2 class="mb-3">🎯 Leads e Conversão</h2>
+      <canvas id="leadsChart"></canvas>
     </div>
 
     <div class="chart-container">
-      <h2 class="mb-3">💰 Receita Mensal (R$)</h2>
-      <canvas id="revenueChart"></canvas>
-      <p class="mt-2 text-secondary">
-        <span class="legend-label text-warning">🟨 Receita:</span> total financeiro gerado por mês.
-      </p>
+      <h2 class="mb-3">💰 Investimento e Receita</h2>
+      <canvas id="financeChart"></canvas>
     </div>
 
     <!-- Tabela -->
@@ -111,64 +93,62 @@
       <table class="table table-striped table-bordered align-middle">
         <thead class="table-light">
           <tr>
-            <th>Mês</th>
-            <th>Matrículas</th>
-            <th>Leads</th>
-            <th>Taxa de Conversão (%)</th>
-            <th>CAC (R$)</th>
-            <th>Receita (R$)</th>
+            <th>Indicador</th>
+            <th>Valor Atual</th>
+            <th>Análise Rápida</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Mês 1</td><td>120</td><td>500</td><td>24</td><td>150</td><td>120000</td></tr>
-          <tr><td>Mês 2</td><td>150</td><td>700</td><td>21.4</td><td>170</td><td>135000</td></tr>
-          <tr><td>Mês 3</td><td>180</td><td>800</td><td>22.5</td><td>175</td><td>150000</td></tr>
+          <tr><td>Matrículas</td><td>600</td><td>Gap de 105. Acelerar ações comerciais.</td></tr>
+          <tr><td>Taxa de Conversão</td><td>4,6%</td><td>Boa qualidade de lead. Foco em volume.</td></tr>
+          <tr><td>CAC</td><td>R$ 300,00</td><td>Monitorar custo e rentabilidade.</td></tr>
+          <tr><td>Receita Mensal</td><td>R$ 149.400,00</td><td>Abaixo da meta por queda em matrículas.</td></tr>
+          <tr><td>Leads</td><td>13.000</td><td>Gap de 2.667 leads. Marketing precisa aumentar volume.</td></tr>
+          <tr><td>Crescimento Médio</td><td>542</td><td>Projeção positiva, manter consistência.</td></tr>
+          <tr><td>Matrículas Projetadas (Nov–Jan)</td><td>705</td><td>Reflete crescimento esperado.</td></tr>
+          <tr><td>Leads Necessários/mês</td><td>15.667</td><td>Meta mínima de captação mensal.</td></tr>
+          <tr><td>Investimento em Marketing</td><td>R$ 188.004,00</td><td>Controlar ROI e eficiência.</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <script>
-    const meses = ["Mês 1", "Mês 2", "Mês 3"];
-    const matriculas = [120, 150, 180];
-    const conversao = [24, 21.4, 22.5];
-    const receita = [120000, 135000, 150000];
+    const meses = ["Novembro", "Dezembro", "Janeiro"];
+    const matriculasProj = [600, 650, 705];
+    const leads = [13000, 14500, 15667];
+    const investimento = [60000, 64000, 64004];
+    const receita = [149400, 160000, 175000];
 
-    // Gráfico de Matrículas
+    // Matrículas
     new Chart(document.getElementById("matriculasChart"), {
       type: "bar",
       data: {
         labels: meses,
         datasets: [{
-          label: "Número de Matrículas",
-          data: matriculas,
+          label: "Matrículas Projetadas",
+          data: matriculasProj,
           backgroundColor: "#0d6efd"
         }]
       },
       options: {
         responsive: true,
         plugins: {
-          title: {
-            display: true,
-            text: "Número de Matrículas por Mês",
-            font: { size: 16 }
-          },
+          title: { display: true, text: "Projeção de Matrículas", font: { size: 16 } },
           legend: { display: false }
         },
-        scales: {
-          y: { beginAtZero: true }
-        }
+        scales: { y: { beginAtZero: true } }
       }
     });
 
-    // Gráfico de Conversão
-    new Chart(document.getElementById("conversionChart"), {
+    // Leads
+    new Chart(document.getElementById("leadsChart"), {
       type: "line",
       data: {
         labels: meses,
         datasets: [{
-          label: "Taxa de Conversão (%)",
-          data: conversao,
+          label: "Leads Gerados",
+          data: leads,
           borderColor: "#198754",
           backgroundColor: "rgba(25,135,84,0.3)",
           tension: 0.3,
@@ -178,42 +158,36 @@
       options: {
         responsive: true,
         plugins: {
-          title: {
-            display: true,
-            text: "Taxa de Conversão de Leads em Alunos (%)",
-            font: { size: 16 }
-          }
+          title: { display: true, text: "Leads e Conversão", font: { size: 16 } }
         },
-        scales: {
-          y: { beginAtZero: true, max: 30 }
-        }
+        scales: { y: { beginAtZero: true } }
       }
     });
 
-    // Gráfico de Receita
-    new Chart(document.getElementById("revenueChart"), {
+    // Receita x Investimento
+    new Chart(document.getElementById("financeChart"), {
       type: "bar",
       data: {
         labels: meses,
-        datasets: [{
-          label: "Receita Mensal (R$)",
-          data: receita,
-          backgroundColor: "#ffc107"
-        }]
+        datasets: [
+          {
+            label: "Receita (R$)",
+            data: receita,
+            backgroundColor: "#ffc107"
+          },
+          {
+            label: "Investimento em Marketing (R$)",
+            data: investimento,
+            backgroundColor: "#dc3545"
+          }
+        ]
       },
       options: {
         responsive: true,
         plugins: {
-          title: {
-            display: true,
-            text: "Evolução da Receita Mensal (R$)",
-            font: { size: 16 }
-          },
-          legend: { display: false }
+          title: { display: true, text: "Receita vs Investimento", font: { size: 16 } },
         },
-        scales: {
-          y: { beginAtZero: true }
-        }
+        scales: { y: { beginAtZero: true } }
       }
     });
   </script>
