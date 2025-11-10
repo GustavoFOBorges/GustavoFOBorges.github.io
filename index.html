@@ -1,118 +1,221 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelo Lógico | TecLab </title>
-    <style>
-         
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;  
-            padding: 20px;  
-            background-color: #f4f4f9;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Educacional</title>
 
-        h1 {
-            color: #333;
-            text-align: center;  
-        }
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
 
-        .mermaid-container {
-            width: 95%; 
-            max-width: 1600px;  
-            margin: 20px auto;  
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            overflow: auto;  
-        }
-        
-        .mermaid-container svg {
-             transform: scale(1.3); 
-            transform-origin: top left;
-        }
-    </style>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: "Segoe UI", sans-serif;
+    }
+    .kpi-card {
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      padding: 1.5rem;
+      background: white;
+    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #0d6efd;
+    }
+    .chart-container {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    h2 {
+      font-weight: 600;
+      color: #212529;
+    }
+    .legend-label {
+      font-weight: 500;
+    }
+  </style>
 </head>
-<body>
 
-     
+<body class="p-4">
+  <div class="container">
+    <h1 class="text-center mb-4">📊 Dashboard Educacional</h1>
 
-    <div class="mermaid-container">
-        <pre class="mermaid">
-erDiagram
-    Usuarios {
-        int id_usuario PK
-        varchar nome_completo
-        varchar email
-        int cpf
-        varchar senha_hash
-        int id_curso FK
-        int id_tipo_participacao FK
-        datetime data_criacao
-    }
-    Cursos {
-        int id_curso PK
-        varchar nome_curso
-    }
-    TiposParticipacao {
-        int id_tipo PK
-        varchar descricao
-    }
-    Atividades {
-        int id_atividade PK
-        varchar nome
-        text descricao
-        datetime data_hora_inicio
-        datetime data_hora_fim
-        int numero_vagas
-        int id_local FK
-        int id_responsavel FK
-    }
-    Locais {
-        int id_local PK
-        varchar nome_local
-        int capacidade
-    }
-    Inscricoes {
-        int id_inscricao PK
-        int id_usuario FK
-        int id_atividade FK
-        enum status
-        datetime data_inscricao
-    }
-    Presencas {
-        int id_presenca PK
-        int id_inscricao FK
-        datetime data_hora_entrada
-        datetime data_hora_saida
-    }
-    PerfisAcesso {
-        int id_perfil PK
-        varchar nome_perfil
-    }
-    UsuariosPerfis {
-        int id_usuario PK, FK
-        int id_perfil PK, FK
-    }
-
-    Usuarios ||--o{ Inscricoes : "realiza"
-    Atividades ||--o{ Inscricoes : "recebe"
-    Usuarios }o--|| Cursos : "pertence a"
-    Usuarios }o--|| TiposParticipacao : "é do tipo"
-    Atividades }o--|| Locais : "ocorre em"
-    Atividades }o--|| Usuarios : "é organizada por"
-    Inscricoes ||--o{ Presencas : "gera"
-    Usuarios ||--|{ UsuariosPerfis : "possui"
-    PerfisAcesso ||--|{ UsuariosPerfis : "é atribuído a"
-        </pre>
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-label">Total de Matrículas</div>
+          <div class="kpi-value">450</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-label">Taxa Média de Conversão</div>
+          <div class="kpi-value">22.3%</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-label">CAC Médio (R$)</div>
+          <div class="kpi-value">165</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-label">Receita Total</div>
+          <div class="kpi-value">R$ 405.000</div>
+        </div>
+      </div>
     </div>
 
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true });
-    </script>
+    <!-- Gráficos -->
+    <div class="chart-container">
+      <h2 class="mb-3">📈 Evolução de Matrículas</h2>
+      <canvas id="matriculasChart"></canvas>
+      <p class="mt-2 text-secondary">
+        <span class="legend-label text-primary">🟦 Matrículas:</span> número total de alunos matriculados em cada mês.
+      </p>
+    </div>
+
+    <div class="chart-container">
+      <h2 class="mb-3">🎯 Taxa de Conversão (%)</h2>
+      <canvas id="conversionChart"></canvas>
+      <p class="mt-2 text-secondary">
+        <span class="legend-label text-success">🟩 Conversão:</span> percentual de leads que se tornaram alunos.
+      </p>
+    </div>
+
+    <div class="chart-container">
+      <h2 class="mb-3">💰 Receita Mensal (R$)</h2>
+      <canvas id="revenueChart"></canvas>
+      <p class="mt-2 text-secondary">
+        <span class="legend-label text-warning">🟨 Receita:</span> total financeiro gerado por mês.
+      </p>
+    </div>
+
+    <!-- Tabela -->
+    <div class="chart-container">
+      <h2 class="mb-3">📋 Dados Resumidos</h2>
+      <table class="table table-striped table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Mês</th>
+            <th>Matrículas</th>
+            <th>Leads</th>
+            <th>Taxa de Conversão (%)</th>
+            <th>CAC (R$)</th>
+            <th>Receita (R$)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Mês 1</td><td>120</td><td>500</td><td>24</td><td>150</td><td>120000</td></tr>
+          <tr><td>Mês 2</td><td>150</td><td>700</td><td>21.4</td><td>170</td><td>135000</td></tr>
+          <tr><td>Mês 3</td><td>180</td><td>800</td><td>22.5</td><td>175</td><td>150000</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const meses = ["Mês 1", "Mês 2", "Mês 3"];
+    const matriculas = [120, 150, 180];
+    const conversao = [24, 21.4, 22.5];
+    const receita = [120000, 135000, 150000];
+
+    // Gráfico de Matrículas
+    new Chart(document.getElementById("matriculasChart"), {
+      type: "bar",
+      data: {
+        labels: meses,
+        datasets: [{
+          label: "Número de Matrículas",
+          data: matriculas,
+          backgroundColor: "#0d6efd"
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Número de Matrículas por Mês",
+            font: { size: 16 }
+          },
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // Gráfico de Conversão
+    new Chart(document.getElementById("conversionChart"), {
+      type: "line",
+      data: {
+        labels: meses,
+        datasets: [{
+          label: "Taxa de Conversão (%)",
+          data: conversao,
+          borderColor: "#198754",
+          backgroundColor: "rgba(25,135,84,0.3)",
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Taxa de Conversão de Leads em Alunos (%)",
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, max: 30 }
+        }
+      }
+    });
+
+    // Gráfico de Receita
+    new Chart(document.getElementById("revenueChart"), {
+      type: "bar",
+      data: {
+        labels: meses,
+        datasets: [{
+          label: "Receita Mensal (R$)",
+          data: receita,
+          backgroundColor: "#ffc107"
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Evolução da Receita Mensal (R$)",
+            font: { size: 16 }
+          },
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script>
 </body>
 </html>
