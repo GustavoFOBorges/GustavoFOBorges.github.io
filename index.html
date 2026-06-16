@@ -1,14 +1,1158 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boutique da Lu</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG 3D - Minimalista & Otimizado</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0c10; color: #ffffff; user-select: none; }
+        
+        #creation-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b0c10; z-index: 10; }
+        .window-container { background: #1f2833; padding: 40px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 420px; border-top: 4px solid #0881c8; }
+        
+        .tabs { display: flex; justify-content: space-between; border-bottom: 2px solid #2a3642; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px 0; cursor: pointer; font-weight: 600; color: #667b8a; transition: all 0.2s ease; text-transform: uppercase; font-size: 13px; text-align: center; letter-spacing: 1px; }
+        .tab:hover { color: #c5c6c7; }
+        .tab.active { color: #ffffff; border-bottom: 3px solid #0881c8; }
+        
+        #class-desc { min-height: 80px; margin-bottom: 25px; font-size: 14px; color: #c5c6c7; line-height: 1.6; }
+        .start-btn { background-color: #0881c8; color: white; border: none; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; transition: background 0.2s; letter-spacing: 1px; text-transform: uppercase; }
+        .start-btn:hover { background-color: #06669e; }
+
+        #hud { position: absolute; top: 20px; left: 20px; background: rgba(31, 40, 51, 0.9); padding: 20px; border-left: 4px solid #0881c8; border-radius: 0 4px 4px 0; display: none; z-index: 5; width: 220px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #hud h3 { margin: 0 0 15px 0; font-size: 15px; text-transform: uppercase; color: #0881c8; letter-spacing: 1px; }
+        .inv-item { font-size: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; border-bottom: 1px solid #2a3642; padding-bottom: 5px; color: #c5c6c7; }
+        .controls-hint { margin-top: 20px; font-size: 12px; color: #667b8a; line-height: 1.8; }
+        .magic-hint { color: #0881c8; font-weight: bold; }
+        
+        #loading { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; color: #667b8a; display: none; letter-spacing: 2px; text-transform: uppercase; }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 <body>
-<p>Carregando Boutique da Lu...</p>
-<script>
-  window.location.replace('boutique-da-lu.html?static=1' + window.location.hash);
-</script>
+
+    <div id="loading">Inicializando Engine...</div>
+
+    <div id="creation-screen">
+        <div class="window-container">
+            <h2 style="margin-top:0; margin-bottom:20px; font-weight: bold; text-align: center; color: #ffffff; letter-spacing: 2px;">RPG ENGINE</h2>
+            <div class="tabs">
+                <div class="tab" id="tab-guerreiro">Guerreiro</div>
+                <div class="tab active" id="tab-mago">Mago</div>
+                <div class="tab" id="tab-curandeiro">Curandeiro</div>
+            </div>
+            <div id="class-desc">
+                <strong>Mago Arcano:</strong> Controle de projéteis luminosos e levitação no cenário.
+            </div>
+            <button class="start-btn" id="btn-start">Iniciar</button>
+        </div>
+    </div>
+
+    <div id="hud">
+        <h3 id="player-class-display">Classe</h3>
+        <div class="inv-item"><span>Madeira:</span> <strong id="inv-wood">0</strong></div>
+        <div class="inv-item"><span>Pedra:</span> <strong id="inv-stone">0</strong></div>
+        <div class="controls-hint">
+            <strong>[W A S D]</strong> Mover<br>
+            <strong>[ESPAÇO]</strong> Pular<br>
+            <strong>[E]</strong> Coletar (Próximo)<br>
+            <strong>[B]</strong> Construir (Custa 1)<br>
+            <div id="mago-controls" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a3642;">
+                <span class="magic-hint">[CLIQUE ESQ]</span> Tiro Arcano<br>
+                <span class="magic-hint">[Q]</span> Bola de Fogo (mira e coleta)<br>
+                <span class="magic-hint">[R]</span> Poção de Velocidade<br>
+                <span class="magic-hint">[F]</span> Levitação
+            </div>
+            <div id="power-status" style="margin-top: 10px; min-height: 16px; font-size: 12px; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+        import { Water } from 'three/addons/objects/Water.js';
+        import { Sky } from 'three/addons/objects/Sky.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        const classesInfo = {
+            'guerreiro': { color: 0xaa4444, speed: 0.095, jump: 0.26, desc: "<strong>Guerreiro:</strong> Colisão densa, movimentação focada em resistência física." },
+            'mago': { color: 0x0881c8, speed: 0.115, jump: 0.22, desc: "<strong>Mago Arcano:</strong> Controle de projéteis luminosos e levitação no cenário." },
+            'curandeiro': { color: 0x44aa66, speed: 0.085, jump: 0.30, desc: "<strong>Curandeiro:</strong> Suporte. Alta impulsão de pulo para navegação vertical." }
+        };
+
+        let selectedClass = 'mago'; 
+        let inventory = { wood: 0, stone: 0 };
+        
+        let scene, camera, renderer, composer, player, humanoidModel, water;
+        let mixer, actionIdle, actionWalk, actionRun, currentAction, playerYaw = 0;
+        let fallback = null, bones = {};
+        let castTimer = 0;        // tempo restante da pose de lançar magia
+        let flyBlend = 0;         // 0..1 quão "flutuando" o corpo está
+        const CAST_DURATION = 0.45; // segundos
+        const FACING_OFFSET = Math.PI; // ajuste de orientação do modelo glTF
+        // Câmera orbital (botão direito gira, roda dá zoom)
+        let camYaw = 0.4, camPitch = 0.32, camDist = 9, camTargetDist = 9;
+        let camDragging = false, lastMX = 0, lastMY = 0, fillLight;
+        const WALK_REF = 5.0; // velocidade de referência p/ sincronizar o passo
+        // Poderes do mago
+        let speedTimer = 0, speedCooldown = 0, fbCooldown = 0;
+        const SPEED_MULT = 1.9, SPEED_DURATION = 6, SPEED_COOLDOWN = 10, FB_COOLDOWN = 0.6;
+        let fxList = []; // efeitos visuais (explosões/brilhos)
+        // Temporários p/ orientar o personagem ao terreno (sem alocar por frame)
+        const _up = new THREE.Vector3(0, 1, 0), _gn = new THREE.Vector3(), _tgt = new THREE.Vector3();
+        const _qa = new THREE.Quaternion(), _qy = new THREE.Quaternion();
+        let physicsBlocks = []; let magicParticles = [];
+        
+        // Arrays para a lógica de coleta separada da renderização (Performance)
+        let resourcesData = []; 
+
+        let keys = { w: false, a: false, s: false, d: false, ' ': false, f: false };
+        let isFlying = false; let flyTimer = 0;
+        const GRAVITY = 0.015; let playerVelocityY = 0; let playerIsGrounded = false;
+        const playerSize = { width: 1.0, height: 2.2, depth: 1.0 };
+        const mapSize = 400;
+        const WATER_LEVEL = -1.0;        // Nível do mar: abaixo disso vira lago/oceano
+        let sunVector = new THREE.Vector3(); // Direção do sol, compartilhada por céu/luz/água
+
+        document.getElementById('tab-guerreiro').addEventListener('click', (e) => selectClass('guerreiro', e.target));
+        document.getElementById('tab-mago').addEventListener('click', (e) => selectClass('mago', e.target));
+        document.getElementById('tab-curandeiro').addEventListener('click', (e) => selectClass('curandeiro', e.target));
+        document.getElementById('btn-start').addEventListener('click', startGame);
+
+        function selectClass(className, element) {
+            selectedClass = className;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('class-desc').innerHTML = classesInfo[className].desc;
+        }
+
+        function startGame() {
+            document.getElementById('creation-screen').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('hud').style.display = 'block';
+                document.getElementById('player-class-display').innerText = selectedClass.toUpperCase();
+                document.getElementById('mago-controls').style.display = selectedClass === 'mago' ? 'block' : 'none';
+                initEngine();
+                document.getElementById('loading').style.display = 'none';
+            }, 50);
+        }
+
+        // ================= RUÍDO PROCEDURAL (Value Noise + FBM) =================
+        // Hash determinístico -> ruído suave -> várias oitavas = relevo natural
+        function hash2(x, z) {
+            let h = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+            return h - Math.floor(h);
+        }
+        function smoothNoise(x, z) {
+            const xi = Math.floor(x), zi = Math.floor(z);
+            const xf = x - xi, zf = z - zi;
+            const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+            const a = hash2(xi, zi), b = hash2(xi + 1, zi);
+            const c = hash2(xi, zi + 1), d = hash2(xi + 1, zi + 1);
+            return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+        }
+        function fbm(x, z, octaves) {
+            let value = 0, amp = 0.5, freq = 1, total = 0;
+            for (let i = 0; i < octaves; i++) {
+                value += smoothNoise(x * freq, z * freq) * amp;
+                total += amp;
+                amp *= 0.5; freq *= 2.0;
+            }
+            return value / total; // 0..1
+        }
+
+        // Altura do terreno: planícies onduladas + cadeias de montanhas + erosão de vales
+        function getTerrainHeight(x, z) {
+            const cont = fbm(x * 0.0016, z * 0.0016, 4);          // continente (grandes massas)
+            const hills = fbm(x * 0.012, z * 0.012, 5);           // colinas/detalhe médio
+            // Cristas de montanha (ruído "ridged" -> picos afiados)
+            let ridge = Math.abs(fbm(x * 0.004 + 50, z * 0.004 + 50, 4) - 0.5) * 2;
+            ridge = (1 - ridge);
+            ridge = ridge * ridge;
+
+            let h = cont * 38;                 // base do continente
+            h += (hills - 0.5) * 14;           // ondulações
+            h += ridge * cont * 55;            // montanhas só onde o continente é alto
+            h -= 12;                           // afunda planícies para criar litoral/água
+            return h;
+        }
+
+        // Textura de detalhe do solo gerada em canvas (granulação multiplicada nas cores)
+        // ================= TEXTURAS PBR PROCEDURAIS (albedo + normal) =================
+        // Ruído tileável (período P em células) para texturas que repetem sem emenda
+        function hashP(xi, zi, P) { xi = ((xi % P) + P) % P; zi = ((zi % P) + P) % P; let h = Math.sin(xi * 127.1 + zi * 311.7) * 43758.5453; return h - Math.floor(h); }
+        function snP(x, z, P) { const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi; const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf); const a = hashP(xi, zi, P), b = hashP(xi + 1, zi, P), c = hashP(xi, zi + 1, P), d = hashP(xi + 1, zi + 1, P); return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v; }
+        function fbmP(x, z, o, P) { let val = 0, amp = .5, f = 1, t = 0; for (let i = 0; i < o; i++) { const pp = Math.max(1, Math.round(P * f)); val += snP(x * f, z * f, pp) * amp; t += amp; amp *= .5; f *= 2; } return val / t; }
+        function clamp8(v) { return Math.max(0, Math.min(255, Math.floor(v))); }
+
+        // Gera {albedo, normal} de um campo de altura + função de cor (normal via Sobel)
+        function buildTexSet(size, P, octaves, normalStrength, colorFn) {
+            const H = new Float32Array(size * size);
+            for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) H[y * size + x] = fbmP(x / size * P, y / size * P, octaves, P);
+            const aCv = document.createElement('canvas'); aCv.width = aCv.height = size; const aCtx = aCv.getContext('2d'); const aImg = aCtx.createImageData(size, size);
+            const nCv = document.createElement('canvas'); nCv.width = nCv.height = size; const nCtx = nCv.getContext('2d'); const nImg = nCtx.createImageData(size, size);
+            const at = (x, y) => H[(((y % size) + size) % size) * size + (((x % size) + size) % size)];
+            for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+                const i = (y * size + x) * 4, h = H[y * size + x];
+                const c = colorFn(x, y, h, fbmP(x / size * P * 3, y / size * P * 3, 3, P * 3));
+                aImg.data[i] = c[0]; aImg.data[i + 1] = c[1]; aImg.data[i + 2] = c[2]; aImg.data[i + 3] = 255;
+                const dx = (at(x + 1, y) - at(x - 1, y)) * normalStrength, dy = (at(x, y + 1) - at(x, y - 1)) * normalStrength;
+                let nx = -dx, ny = -dy, nz = 1.0; const len = Math.hypot(nx, ny, nz); nx /= len; ny /= len; nz /= len;
+                nImg.data[i] = Math.floor((nx * 0.5 + 0.5) * 255); nImg.data[i + 1] = Math.floor((ny * 0.5 + 0.5) * 255); nImg.data[i + 2] = Math.floor((nz * 0.5 + 0.5) * 255); nImg.data[i + 3] = 255;
+            }
+            aCtx.putImageData(aImg, 0, 0); nCtx.putImageData(nImg, 0, 0);
+            const mk = (cv) => { const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; };
+            return { albedo: mk(aCv), normal: mk(nCv) };
+        }
+
+        let _terrainTex = null;
+        function makeTerrainMaterial() {
+            if (!_terrainTex) {
+                _terrainTex = {
+                    grass: buildTexSet(256, 20, 5, 90, (x, y, h, d) => {
+                        const blade = Math.pow(d, 1.5); let r = 45 + blade * 55 + h * 18, g = 80 + blade * 92 + h * 22, b = 30 + blade * 28;
+                        const dry = Math.max(0, d - 0.72) * 2.6; r += dry * 70; g += dry * 42; return [clamp8(r), clamp8(g), clamp8(b)];
+                    }),
+                    rock: buildTexSet(256, 16, 5, 220, (x, y, h, d) => {
+                        let g = 95 + h * 90; const crack = Math.pow(1 - Math.abs(d - 0.5) * 2, 6); g -= crack * 70; const warm = (d - 0.5) * 18;
+                        return [clamp8(g + warm), clamp8(g + warm * 0.4), clamp8(g * 0.96)];
+                    }),
+                    sand: buildTexSet(256, 32, 4, 60, (x, y, h, d) => [clamp8(196 + h * 30), clamp8(180 + h * 28), clamp8(140 + h * 26)])
+                };
+            }
+            const T = _terrainTex;
+            const mat = new THREE.MeshStandardMaterial({
+                map: T.grass.albedo, normalMap: T.grass.normal,
+                roughness: 0.95, metalness: 0.0, normalScale: new THREE.Vector2(0.5, 0.5)
+            });
+            mat.onBeforeCompile = (shader) => {
+                shader.uniforms.uRock = { value: T.rock.albedo };
+                shader.uniforms.uRockN = { value: T.rock.normal };
+                shader.uniforms.uSand = { value: T.sand.albedo };
+                shader.uniforms.uScale = { value: 0.09 };
+                shader.uniforms.uWater = { value: WATER_LEVEL };
+
+                shader.vertexShader = shader.vertexShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
+                    .replace('#include <begin_vertex>', '#include <begin_vertex>\n vWPos=(modelMatrix*vec4(transformed,1.0)).xyz;\n vWNrm=normalize(mat3(modelMatrix)*objectNormal);');
+
+                shader.fragmentShader = shader.fragmentShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWNrm;\nuniform sampler2D uRock;uniform sampler2D uRockN;uniform sampler2D uSand;uniform float uScale;uniform float uWater;\nfloat wRockG, wSandG, wSnowG; vec2 uvTG;')
+                    .replace('#include <map_fragment>', `
+                        uvTG = vWPos.xz * uScale;
+                        float slope = clamp(vWNrm.y, 0.0, 1.0);
+                        wRockG = smoothstep(0.80, 0.52, slope);
+                        wSandG = smoothstep(uWater+1.8, uWater-0.3, vWPos.y);
+                        wSnowG = smoothstep(26.0, 36.0, vWPos.y) * smoothstep(0.5, 0.82, slope);
+                        vec3 cGrass = mix(texture2D(map, uvTG).rgb, texture2D(map, uvTG*0.41+0.17).rgb, 0.5);
+                        vec3 cRock  = mix(texture2D(uRock, uvTG*0.55).rgb, texture2D(uRock, uvTG*0.21+0.3).rgb, 0.5);
+                        vec3 cSand  = texture2D(uSand, uvTG*1.3).rgb;
+                        vec3 albedo = cGrass;
+                        albedo = mix(albedo, cRock, wRockG);
+                        albedo = mix(albedo, cSand, wSandG);
+                        albedo = mix(albedo, vec3(0.90,0.93,0.97), wSnowG);
+                        float macro = texture2D(map, vWPos.xz*uScale*0.045).g;
+                        albedo *= (0.80 + 0.34*macro);
+                        diffuseColor.rgb *= albedo;
+                    `)
+                    .replace('#include <normal_fragment_maps>', `
+                        vec3 nGrass = mix(texture2D(normalMap, uvTG).xyz, texture2D(normalMap, uvTG*0.41+0.17).xyz, 0.5)*2.0-1.0;
+                        vec3 nRock  = texture2D(uRockN, uvTG*0.55).xyz*2.0-1.0;
+                        vec3 mapN = normalize(mix(nGrass, nRock, wRockG));
+                        mapN.xy *= normalScale;
+                        normal = perturbNormal2Arb( -vViewPosition, normal, mapN, faceDirection );
+                    `);
+            };
+            return mat;
+        }
+
+        function initEngine() {
+            scene = new THREE.Scene();
+            // Névoa atmosférica clara (cor de horizonte diurno) -> profundidade realista
+            scene.fog = new THREE.FogExp2(0xcdd9e5, 0.0028);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Sombras suaves = menos arcade
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.62;
+            document.body.appendChild(renderer.domElement);
+
+            // ================= CÉU ATMOSFÉRICO (scattering real) =================
+            const sky = new Sky();
+            sky.scale.setScalar(10000);
+            scene.add(sky);
+            const skyU = sky.material.uniforms;
+            skyU['turbidity'].value = 8;
+            skyU['rayleigh'].value = 2.2;
+            skyU['mieCoefficient'].value = 0.005;
+            skyU['mieDirectionalG'].value = 0.8;
+
+            // Posição do sol (elevação baixa = luz dourada / sombras longas)
+            const elevation = 22, azimuth = 150;
+            const phi = THREE.MathUtils.degToRad(90 - elevation);
+            const theta = THREE.MathUtils.degToRad(azimuth);
+            sunVector.setFromSphericalCoords(1, phi, theta);
+            skyU['sunPosition'].value.copy(sunVector);
+
+            // POST-PROCESSING: SSAO (oclusão) -> Bloom -> Color grading
+            composer = new EffectComposer(renderer);
+
+            // SSAO: escurece cantos/bases e ancora os objetos no chão (já renderiza a cena)
+            const ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+            ssaoPass.kernelRadius = 1.0;
+            ssaoPass.minDistance = 0.0015;
+            ssaoPass.maxDistance = 0.08;
+            // Faz o passe de normal/profundidade do SSAO respeitar o esqueleto do personagem,
+            // senão o SSAO usa a pose de bind (T-pose) e gera um halo de "braços abertos" no chão.
+            ssaoPass.normalMaterial.skinning = true;
+            composer.addPass(ssaoPass);
+
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.92;
+            bloomPass.strength = 0.35;
+            bloomPass.radius = 0.4;
+            composer.addPass(bloomPass);
+
+            // Color grading + vinheta: saturação/contraste/calor + escurecimento nos cantos
+            const gradingPass = new ShaderPass({
+                uniforms: { tDiffuse: { value: null }, uSat: { value: 1.14 }, uContrast: { value: 1.07 }, uWarm: { value: 0.018 } },
+                vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+                fragmentShader: `
+                    varying vec2 vUv; uniform sampler2D tDiffuse; uniform float uSat, uContrast, uWarm;
+                    void main(){
+                        vec3 c = texture2D(tDiffuse, vUv).rgb;
+                        float l = dot(c, vec3(0.299,0.587,0.114));
+                        c = mix(vec3(l), c, uSat);              // saturação
+                        c = (c - 0.5) * uContrast + 0.5;        // contraste
+                        c.r += uWarm; c.b -= uWarm * 0.5;       // calor (luz dourada)
+                        float dist = length(vUv - 0.5);
+                        c *= 1.0 - smoothstep(0.36, 0.8, dist) * 0.5; // vinheta
+                        gl_FragColor = vec4(clamp(c,0.0,1.0), 1.0);
+                    }`
+            });
+            composer.addPass(gradingPass);
+
+            // ================= ILUMINAÇÃO DIURNA =================
+            // Luz do céu (azul) vs. luz refletida do chão (terroso) -> ambiente natural
+            const hemiLight = new THREE.HemisphereLight(0xbcd6f0, 0x5a4d3a, 0.45);
+            scene.add(hemiLight);
+
+            // Sol direcional quente, alinhado com o céu
+            const sunLight = new THREE.DirectionalLight(0xfff1d6, 1.9);
+            sunLight.position.copy(sunVector).multiplyScalar(200);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 0.5; sunLight.shadow.camera.far = 600;
+            sunLight.shadow.bias = -0.0004;
+            const d = 140; sunLight.shadow.camera.left = -d; sunLight.shadow.camera.right = d; sunLight.shadow.camera.top = d; sunLight.shadow.camera.bottom = -d;
+            scene.add(sunLight);
+
+            // ================= TERRENO =================
+            const SEG = 200; // alta resolução -> contornos suaves, não facetado
+            const terrainGeo = new THREE.PlaneGeometry(mapSize, mapSize, SEG, SEG);
+            terrainGeo.rotateX(-Math.PI / 2);
+            const pos = terrainGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                pos.setY(i, getTerrainHeight(pos.getX(i), pos.getZ(i)));
+            }
+            terrainGeo.computeVertexNormals();
+
+            // Material PBR: grama/rocha/areia/neve misturadas por inclinação e altura,
+            // com normal maps (relevo iluminado pelo sol). Ver makeTerrainMaterial().
+            const terrain = new THREE.Mesh(terrainGeo, makeTerrainMaterial());
+            terrain.receiveShadow = true;
+            scene.add(terrain);
+
+            // ================= ÁGUA REALISTA (reflexo de céu/sol) =================
+            const waterGeo = new THREE.PlaneGeometry(mapSize * 2, mapSize * 2);
+            water = new Water(waterGeo, {
+                textureWidth: 512,
+                textureHeight: 512,
+                waterNormals: new THREE.TextureLoader().load(
+                    'https://unpkg.com/three@0.128.0/examples/textures/waternormals.jpg',
+                    (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+                ),
+                sunDirection: sunVector.clone().normalize(),
+                sunColor: 0xffffff,
+                waterColor: 0x223d54,
+                distortionScale: 3.0,
+                fog: scene.fog !== undefined
+            });
+            water.rotation.x = -Math.PI / 2;
+            water.position.y = WATER_LEVEL;
+            scene.add(water);
+
+            player = new THREE.Group();
+            humanoidModel = new THREE.Group();   // container girado pela direção do jogador
+            player.add(humanoidModel);
+            loadCharacter();                     // carrega o humano 3D (assíncrono)
+            // Procura um ponto de spawn em terra firme, plana e acima da água
+            let sx = 0, sz = 0, sh = getTerrainHeight(0, 0);
+            for (let i = 0; i < 60; i++) {
+                const tx = (Math.random() - 0.5) * mapSize * 0.6;
+                const tz = (Math.random() - 0.5) * mapSize * 0.6;
+                const th = getTerrainHeight(tx, tz);
+                if (th > WATER_LEVEL + 2 && th < 18 && terrainSlope(tx, tz) < 0.35) {
+                    sx = tx; sz = tz; sh = th; break;
+                }
+            }
+            player.position.set(sx, sh + 10, sz);
+            scene.add(player);
+
+            generateInstancedEcosystem(); // <-- A GRANDE OTIMIZAÇÃO
+
+            // Luz de preenchimento que vem da câmera -> ilumina o lado que você está vendo (rosto)
+            fillLight = new THREE.DirectionalLight(0xdbe8f5, 0.7);
+            fillLight.target = player;
+            scene.add(fillLight);
+
+            window.addEventListener('keydown', e => handleInput(e, true));
+            window.addEventListener('keyup', e => handleInput(e, false));
+            window.addEventListener('mousedown', e => {
+                if (e.button === 0) castMagic();
+                else if (e.button === 2) { camDragging = true; lastMX = e.clientX; lastMY = e.clientY; }
+            });
+            window.addEventListener('mouseup', e => { if (e.button === 2) camDragging = false; });
+            window.addEventListener('mouseleave', () => camDragging = false);
+            window.addEventListener('mousemove', e => {
+                if (!camDragging) return;
+                camYaw   -= (e.clientX - lastMX) * 0.005;
+                camPitch += (e.clientY - lastMY) * 0.005;
+                camPitch = Math.max(-0.15, Math.min(1.35, camPitch)); // não passa do topo/chão
+                lastMX = e.clientX; lastMY = e.clientY;
+            });
+            window.addEventListener('wheel', e => {
+                camTargetDist = Math.max(3.5, Math.min(28, camTargetDist + e.deltaY * 0.012));
+            }, { passive: true });
+            window.addEventListener('contextmenu', e => e.preventDefault()); // libera o botão direito p/ girar
+            window.addEventListener('resize', onWindowResize);
+
+            animate();
+        }
+
+        // Boneco simples (placeholder enquanto o modelo carrega / fallback offline)
+        function makeFallbackHuman(colorHex) {
+            const g = new THREE.Group();
+            const skin = new THREE.MeshStandardMaterial({ color: 0xd8b89a, roughness: 0.7 });
+            const cloth = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.85 });
+            const dark = new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.9 });
+            const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
+            add(new THREE.CylinderGeometry(0.13, 0.11, 0.95, 10), dark, -0.16, 0.47, 0); // perna E
+            add(new THREE.CylinderGeometry(0.13, 0.11, 0.95, 10), dark, 0.16, 0.47, 0);  // perna D
+            add(new THREE.CylinderGeometry(0.28, 0.24, 0.65, 12), cloth, 0, 1.25, 0);    // tronco
+            add(new THREE.CylinderGeometry(0.09, 0.08, 0.7, 8), cloth, -0.36, 1.2, 0);   // braço E
+            add(new THREE.CylinderGeometry(0.09, 0.08, 0.7, 8), cloth, 0.36, 1.2, 0);    // braço D
+            add(new THREE.SphereGeometry(0.13, 12, 10), skin, 0, 1.78, 0);               // cabeça
+            return g;
+        }
+
+        // ================= JOGADOR (modelo humano 3D rigado) =================
+        function loadCharacter() {
+            fallback = makeFallbackHuman(classesInfo[selectedClass].color);
+            fallback.position.y = -playerSize.height / 2;
+            humanoidModel.add(fallback);
+
+            const loader = new GLTFLoader();
+            const url = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/models/gltf/Soldier.glb';
+            loader.load(url, (gltf) => {
+                const model = gltf.scene;
+
+                // Sombras + leve ajuste de material
+                model.traverse((o) => {
+                    if (o.isMesh) {
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        if (o.material) o.material.metalness = 0.0;
+                    }
+                });
+
+                // Escala para a altura do jogador e apoia os pés na base da colisão
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const targetHeight = playerSize.height * 0.95;
+                const scale = targetHeight / size.y;
+                model.scale.setScalar(scale);
+                model.position.y = -playerSize.height / 2;
+
+                humanoidModel.add(model);
+
+                // Animações: procura por nome (com fallback por índice)
+                const clips = gltf.animations;
+                const find = (name, idx) =>
+                    clips.find(c => c.name.toLowerCase() === name) || clips[idx];
+
+                mixer = new THREE.AnimationMixer(model);
+                actionIdle = mixer.clipAction(find('idle', 0));
+                actionRun  = mixer.clipAction(find('run', 1));
+                actionWalk = mixer.clipAction(find('walk', 3));
+
+                if (actionIdle) { actionIdle.play(); currentAction = actionIdle; }
+
+                // Mapeia os ossos do rig (Mixamo) para animação procedural
+                model.traverse((o) => { if (o.isBone) bones[o.name] = o; });
+
+                if (fallback) { humanoidModel.remove(fallback); fallback = null; } // some o placeholder
+            }, undefined, (err) => {
+                console.error('Falha ao carregar o modelo do personagem (mantendo placeholder):', err);
+            });
+        }
+
+        // Troca suave entre animações (idle/andar)
+        function setAction(next) {
+            if (!next || next === currentAction) return;
+            next.reset().fadeIn(0.2).play();
+            if (currentAction) currentAction.fadeOut(0.2);
+            currentAction = next;
+        }
+
+        function addRot(bone, x, y, z) { if (bone) { bone.rotation.x += x; bone.rotation.y += y; bone.rotation.z += z; } }
+
+        // Poses procedurais (rig Mixamo) sobrepostas por cima das clips.
+        // Como mixer.update reescreve as rotações a cada frame, estas adições NÃO acumulam.
+        // -> Se algum membro ficar invertido, troque o sinal do valor correspondente.
+        function applyProceduralPoses(time, dt) {
+            if (!bones.mixamorigRightArm) return; // modelo glTF ainda não carregou (placeholder ativo)
+
+            // ---------- LEVITAÇÃO (tecla F) ----------
+            const flyTarget = isFlying ? 1 : 0;
+            flyBlend += (flyTarget - flyBlend) * (1 - Math.pow(1 - 0.12, dt)); // suaviza entrada/saída
+            if (flyBlend > 0.001) {
+                const w = flyBlend;
+                addRot(bones.mixamorigSpine,  0.18 * w, 0, 0);   // inclina tronco p/ trás
+                addRot(bones.mixamorigSpine1, 0.10 * w, 0, 0);
+                addRot(bones.mixamorigLeftUpLeg,  -0.70 * w, 0,  0.12 * w); // recolhe coxas
+                addRot(bones.mixamorigRightUpLeg, -0.70 * w, 0, -0.12 * w);
+                addRot(bones.mixamorigLeftLeg,     0.60 * w, 0, 0);         // dobra joelhos
+                addRot(bones.mixamorigRightLeg,    0.60 * w, 0, 0);
+                const bob = Math.sin(time * 2.5) * 0.10 * w;               // braços flutuando
+                addRot(bones.mixamorigLeftArm,  0, 0,  0.55 * w + bob);
+                addRot(bones.mixamorigRightArm, 0, 0, -0.55 * w - bob);
+            }
+
+            // ---------- TIRO ARCANO (clique esquerdo) ----------
+            if (castTimer > 0) {
+                castTimer -= dt / 60;                       // dt normalizado a 60fps -> segundos
+                const p = Math.max(0, castTimer) / CAST_DURATION; // 1 -> 0
+                const w = Math.sin(p * Math.PI);            // impulso: 0 -> 1 -> 0
+                addRot(bones.mixamorigRightArm,     -1.50 * w, 0.20 * w, -0.50 * w); // ergue braço à frente
+                addRot(bones.mixamorigRightForeArm, -0.60 * w, 0, 0);               // estende antebraço
+                addRot(bones.mixamorigSpine1, 0, -0.25 * w, 0);                     // tronco acompanha
+            }
+        }
+
+        // ================= INSTANCING (OTIMIZAÇÃO BRUTAL) =================
+        // Inclinação do terreno num ponto (para não plantar em paredões)
+        function terrainSlope(x, z) {
+            const eps = 1.5;
+            const hx = getTerrainHeight(x + eps, z) - getTerrainHeight(x - eps, z);
+            const hz = getTerrainHeight(x, z + eps) - getTerrainHeight(x, z - eps);
+            return Math.sqrt(hx * hx + hz * hz) / (2 * eps);
+        }
+
+        // Pedregulho irregular: icosaedro deslocado por ruído -> nada de formas perfeitas
+        function makeBoulderGeometry() {
+            const geo = new THREE.IcosahedronGeometry(1.4, 1);
+            const p = geo.attributes.position;
+            const v = new THREE.Vector3();
+            for (let i = 0; i < p.count; i++) {
+                v.fromBufferAttribute(p, i);
+                const n = smoothNoise(v.x * 1.8 + 10, v.z * 1.8 + v.y * 1.8);
+                v.multiplyScalar(0.7 + n * 0.6);
+                p.setXYZ(i, v.x, v.y, v.z);
+            }
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        // Textura alfa de tufo de grama (lâminas sobre fundo transparente)
+        function makeGrassTexture() {
+            const s = 64;
+            const cv = document.createElement('canvas'); cv.width = cv.height = s;
+            const ctx = cv.getContext('2d');
+            ctx.clearRect(0, 0, s, s);
+            for (let i = 0; i < 12; i++) {
+                const x = 6 + Math.random() * (s - 12);
+                const w = 2 + Math.random() * 3;
+                const h = s * (0.45 + Math.random() * 0.5);
+                const lean = (Math.random() - 0.5) * 12;
+                const g = 140 + Math.random() * 90;
+                ctx.fillStyle = `rgb(${Math.floor(g * 0.55)},${Math.floor(g)},${Math.floor(g * 0.4)})`;
+                ctx.beginPath();
+                ctx.moveTo(x - w / 2, s);
+                ctx.lineTo(x + w / 2, s);
+                ctx.lineTo(x + lean, s - h);
+                ctx.closePath();
+                ctx.fill();
+            }
+            return new THREE.CanvasTexture(cv);
+        }
+
+        // Geometria de grama: dois quads cruzados (billboard em X), normais para cima
+        function makeGrassBladeGeometry() {
+            const w = 1, h = 1;
+            const verts = [], uvs = [], norms = [];
+            function quad(ax, az, bx, bz) {
+                verts.push(ax, 0, az, bx, 0, bz, bx, h, bz);
+                uvs.push(0, 1, 1, 1, 1, 0);
+                verts.push(ax, 0, az, bx, h, bz, ax, h, az);
+                uvs.push(0, 1, 1, 0, 0, 0);
+                for (let k = 0; k < 6; k++) norms.push(0, 1, 0);
+            }
+            quad(-w / 2, 0, w / 2, 0);
+            quad(0, -w / 2, 0, w / 2);
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            g.setAttribute('normal', new THREE.Float32BufferAttribute(norms, 3));
+            return g;
+        }
+
+        // Textura alfa de folhagem: aglomerados de folhas -> silhueta irregular (não cone liso)
+        function makeFoliageTexture() {
+            const s = 128;
+            const cv = document.createElement('canvas'); cv.width = cv.height = s;
+            const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, s, s);
+            // base verde semi-opaca -> interior fechado (sem furos pro céu), bordas ragged vêm por cima
+            for (let i = 0; i < 320; i++) {
+                const x = Math.random() * s, y = Math.random() * s, r = 6 + Math.random() * 13;
+                const g = 80 + Math.random() * 95;
+                ctx.fillStyle = `rgba(${Math.floor(g * 0.42)},${Math.floor(g)},${Math.floor(g * 0.32)},${0.85 + Math.random() * 0.15})`;
+                ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.7, Math.random() * Math.PI, 0, Math.PI * 2); ctx.fill();
+            }
+            const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.5, 1.5); return t;
+        }
+        // Casca: estrias verticais marrons
+        function makeBarkTexture() {
+            const s = 64;
+            const cv = document.createElement('canvas'); cv.width = cv.height = s;
+            const ctx = cv.getContext('2d'); ctx.fillStyle = '#4a3322'; ctx.fillRect(0, 0, s, s);
+            for (let i = 0; i < 40; i++) {
+                const x = Math.random() * s, w = 1 + Math.random() * 3, b = Math.random() * 40 - 20;
+                ctx.fillStyle = `rgb(${74 + b},${51 + b * 0.8},${34 + b * 0.6})`;
+                ctx.fillRect(x, 0, w, s);
+            }
+            const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 4); return t;
+        }
+        // Flores: hastes verdes com cabeças coloridas variadas (sobre fundo transparente)
+        function makeFlowerTexture() {
+            const s = 64;
+            const cv = document.createElement('canvas'); cv.width = cv.height = s;
+            const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, s, s);
+            const cols = ['#f4f4f0', '#f6d23a', '#e85d6f', '#b07ce0', '#f29b3b'];
+            for (let i = 0; i < 7; i++) {
+                const x = 8 + Math.random() * (s - 16), top = 10 + Math.random() * 18;
+                ctx.strokeStyle = '#3f6b2c'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x, s); ctx.lineTo(x + (Math.random() - 0.5) * 6, top + 4); ctx.stroke();
+                ctx.fillStyle = cols[(Math.random() * cols.length) | 0];
+                ctx.beginPath(); ctx.arc(x, top, 3 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
+            }
+            return new THREE.CanvasTexture(cv);
+        }
+
+        function generateInstancedEcosystem() {
+            const treeCount = 260;
+            const rockCount = 130;
+
+            // Pinheiro: tronco texturizado + duas copas com folhagem alpha (silhueta irregular)
+            const trunkGeo = new THREE.CylinderGeometry(0.16, 0.32, 4, 7);
+            const leaf1Geo = new THREE.ConeGeometry(2.9, 4.6, 11);
+            const leaf2Geo = new THREE.ConeGeometry(1.9, 3.4, 11);
+            const rockGeo = makeBoulderGeometry();
+
+            const foliageTex = makeFoliageTexture();
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b5038, map: makeBarkTexture(), roughness: 0.95 });
+            // alphaTest recorta a folhagem -> bordas de folhas, não de cone
+            const leavesMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: foliageTex, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9 });
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0, flatShading: true });
+
+            const instancedTrunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
+            const instancedLeaves = new THREE.InstancedMesh(leaf1Geo, leavesMat, treeCount);
+            const instancedLeaves2 = new THREE.InstancedMesh(leaf2Geo, leavesMat.clone(), treeCount);
+            const instancedRocks = new THREE.InstancedMesh(rockGeo, rockMat, rockCount);
+
+            [instancedTrunks, instancedLeaves, instancedLeaves2, instancedRocks].forEach(m => {
+                m.castShadow = true; m.receiveShadow = true;
+            });
+
+            const dummy = new THREE.Object3D();
+            const col = new THREE.Color();
+
+            // Gerar Árvores (terreno gramado e razoavelmente plano, acima da água)
+            let ti = 0;
+            for (let i = 0; i < 1400; i++) {
+                if (ti >= treeCount) break;
+                let rx = (Math.random() - 0.5) * mapSize; let rz = (Math.random() - 0.5) * mapSize; let ry = getTerrainHeight(rx, rz);
+
+                if (ry >= WATER_LEVEL + 1.5 && ry <= 26 && terrainSlope(rx, rz) < 0.5) {
+                    const s = 0.8 + Math.random() * 0.8;
+                    const rot = Math.random() * Math.PI * 2;
+                    dummy.rotation.set(0, rot, 0); dummy.scale.set(s, s, s);
+
+                    dummy.position.set(rx, ry + 2 * s, rz); dummy.updateMatrix();
+                    instancedTrunks.setMatrixAt(ti, dummy.matrix);
+                    col.setHSL(0.08, 0.45, 0.16 + Math.random() * 0.06);
+                    instancedTrunks.setColorAt(ti, col);
+
+                    // Verde da copa varia por árvore (mesma cor nas duas camadas)
+                    col.setHSL(0.26 + Math.random() * 0.05, 0.45, 0.20 + Math.random() * 0.12);
+
+                    dummy.position.set(rx, ry + 4.2 * s, rz); dummy.updateMatrix();
+                    instancedLeaves.setMatrixAt(ti, dummy.matrix);
+                    instancedLeaves.setColorAt(ti, col);
+
+                    dummy.position.set(rx, ry + 6.2 * s, rz); dummy.updateMatrix();
+                    instancedLeaves2.setMatrixAt(ti, dummy.matrix);
+                    instancedLeaves2.setColorAt(ti, col);
+
+                    resourcesData.push({ id: `tree_${ti}`, type: 'wood', pos: new THREE.Vector3(rx, ry, rz), active: true, index: ti });
+                    ti++;
+                }
+            }
+
+            // Gerar Pedras (encostas e altitudes)
+            let ri = 0;
+            for (let i = 0; i < 900; i++) {
+                if (ri >= rockCount) break;
+                let rx = (Math.random() - 0.5) * mapSize; let rz = (Math.random() - 0.5) * mapSize; let ry = getTerrainHeight(rx, rz);
+
+                if (ry > WATER_LEVEL + 0.5 && (ry > 12 || terrainSlope(rx, rz) > 0.35)) {
+                    const scale = 0.6 + Math.random() * 1.6;
+                    dummy.position.set(rx, ry + scale * 0.3, rz);
+                    dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                    dummy.scale.set(scale, scale * (0.7 + Math.random() * 0.3), scale);
+                    dummy.updateMatrix();
+                    instancedRocks.setMatrixAt(ri, dummy.matrix);
+                    const g = 0.30 + Math.random() * 0.14;
+                    col.setRGB(g, g + 0.015, g + 0.04);
+                    instancedRocks.setColorAt(ri, col);
+
+                    resourcesData.push({ id: `rock_${ri}`, type: 'stone', pos: new THREE.Vector3(rx, ry, rz), active: true, index: ri });
+                    ri++;
+                }
+            }
+
+            scene.add(instancedTrunks, instancedLeaves, instancedLeaves2, instancedRocks);
+
+            // ================= GRAMA (billboards cruzados, instanciados) =================
+            const grassCount = 9000;
+            const grassMat = new THREE.MeshStandardMaterial({
+                map: makeGrassTexture(), color: 0xffffff,
+                alphaTest: 0.4, side: THREE.DoubleSide, roughness: 1.0
+            });
+            const grass = new THREE.InstancedMesh(makeGrassBladeGeometry(), grassMat, grassCount);
+            grass.receiveShadow = false; // billboards finos ficam pretos com sombra própria
+            let gi = 0;
+            for (let i = 0; i < grassCount * 4 && gi < grassCount; i++) {
+                let rx = (Math.random() - 0.5) * mapSize; let rz = (Math.random() - 0.5) * mapSize; let ry = getTerrainHeight(rx, rz);
+                if (ry >= WATER_LEVEL + 0.8 && ry <= 22 && terrainSlope(rx, rz) < 0.35) {
+                    const hs = 0.5 + Math.random() * 0.8;   // tufos mais baixos/densos
+                    const ws = 0.8 + Math.random() * 0.9;
+                    dummy.position.set(rx, ry, rz);
+                    dummy.rotation.set(0, Math.random() * Math.PI, 0);
+                    dummy.scale.set(ws, hs, ws); dummy.updateMatrix();
+                    grass.setMatrixAt(gi, dummy.matrix);
+                    col.setHSL(0.26 + Math.random() * 0.05, 0.55, 0.40 + Math.random() * 0.14);
+                    grass.setColorAt(gi, col);
+                    gi++;
+                }
+            }
+            grass.count = gi; // só desenha os que foram colocados
+            scene.add(grass);
+
+            // ================= ARBUSTOS (folhagem baixa) =================
+            const bushCount = 160;
+            const bushMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: foliageTex, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.95 });
+            const bushes = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), bushMat, bushCount);
+            bushes.castShadow = true; bushes.receiveShadow = true;
+            let bi = 0;
+            for (let i = 0; i < bushCount * 5 && bi < bushCount; i++) {
+                let rx = (Math.random() - 0.5) * mapSize, rz = (Math.random() - 0.5) * mapSize, ry = getTerrainHeight(rx, rz);
+                if (ry >= WATER_LEVEL + 1.0 && ry <= 24 && terrainSlope(rx, rz) < 0.45) {
+                    const sc = 0.6 + Math.random() * 0.9;
+                    dummy.position.set(rx, ry + sc * 0.5, rz);
+                    dummy.rotation.set(0, Math.random() * Math.PI, 0);
+                    dummy.scale.set(sc * 1.3, sc, sc * 1.3); // largo e baixo
+                    dummy.updateMatrix(); bushes.setMatrixAt(bi, dummy.matrix);
+                    col.setHSL(0.27 + Math.random() * 0.05, 0.5, 0.34 + Math.random() * 0.12);
+                    bushes.setColorAt(bi, col); bi++;
+                }
+            }
+            bushes.count = bi; scene.add(bushes);
+
+            // ================= FLORES (manchas de cor no chão) =================
+            const flowerCount = 2600;
+            const flowerMat = new THREE.MeshStandardMaterial({ map: makeFlowerTexture(), color: 0xffffff, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 1.0 });
+            const flowers = new THREE.InstancedMesh(makeGrassBladeGeometry(), flowerMat, flowerCount);
+            let fi = 0;
+            for (let i = 0; i < flowerCount * 4 && fi < flowerCount; i++) {
+                let rx = (Math.random() - 0.5) * mapSize, rz = (Math.random() - 0.5) * mapSize, ry = getTerrainHeight(rx, rz);
+                if (ry >= WATER_LEVEL + 1.2 && ry <= 18 && terrainSlope(rx, rz) < 0.3) {
+                    const sc = 0.5 + Math.random() * 0.5;
+                    dummy.position.set(rx, ry, rz);
+                    dummy.rotation.set(0, Math.random() * Math.PI, 0);
+                    dummy.scale.set(sc, sc, sc); dummy.updateMatrix();
+                    flowers.setMatrixAt(fi, dummy.matrix); fi++;
+                }
+            }
+            flowers.count = fi; scene.add(flowers);
+
+            // ================= DETRITOS: pedrinhas espalhadas =================
+            const pebbleCount = 600;
+            const pebbleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0, flatShading: true });
+            const pebbles = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.5, 0), pebbleMat, pebbleCount);
+            pebbles.castShadow = true; pebbles.receiveShadow = true;
+            let pi = 0;
+            for (let i = 0; i < pebbleCount * 4 && pi < pebbleCount; i++) {
+                let rx = (Math.random() - 0.5) * mapSize, rz = (Math.random() - 0.5) * mapSize, ry = getTerrainHeight(rx, rz);
+                if (ry > WATER_LEVEL + 0.2) {
+                    const sc = 0.15 + Math.random() * 0.4;
+                    dummy.position.set(rx, ry + sc * 0.3, rz);
+                    dummy.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+                    dummy.scale.set(sc, sc * 0.7, sc); dummy.updateMatrix();
+                    pebbles.setMatrixAt(pi, dummy.matrix);
+                    const g = 0.32 + Math.random() * 0.16; col.setRGB(g, g + 0.01, g + 0.03);
+                    pebbles.setColorAt(pi, col); pi++;
+                }
+            }
+            pebbles.count = pi; scene.add(pebbles);
+
+            // ================= DETRITOS: troncos caídos =================
+            const logMat = new THREE.MeshStandardMaterial({ color: 0x6b5038, map: makeBarkTexture(), roughness: 0.95 });
+            let placedLogs = 0;
+            for (let i = 0; i < 200 && placedLogs < 26; i++) {
+                let rx = (Math.random() - 0.5) * mapSize, rz = (Math.random() - 0.5) * mapSize, ry = getTerrainHeight(rx, rz);
+                if (ry >= WATER_LEVEL + 1.5 && ry <= 24 && terrainSlope(rx, rz) < 0.28) {
+                    const len = 2 + Math.random() * 3.5, rad = 0.22 + Math.random() * 0.18;
+                    const log = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.9, len, 8), logMat);
+                    log.rotation.set(0, Math.random() * Math.PI, Math.PI / 2 + (Math.random() - 0.5) * 0.2);
+                    log.position.set(rx, ry + rad * 0.7, rz);
+                    log.castShadow = true; log.receiveShadow = true;
+                    scene.add(log); placedLogs++;
+                }
+            }
+
+            // Referências para "esconder" recursos coletados depois
+            window.instancedData = { trunks: instancedTrunks, leaves: instancedLeaves, leaves2: instancedLeaves2, rocks: instancedRocks };
+        }
+
+        // ================= FÍSICA DE MAGIA & PARTÍCULAS =================
+        function castMagic() {
+            if (selectedClass !== 'mago') return;
+            castTimer = CAST_DURATION; // dispara a pose de lançamento
+
+            // Projétil limpo: esfera emissiva azul/branca (Estética #0881c8)
+            const fbGeo = new THREE.IcosahedronGeometry(0.4, 1);
+            const fbMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x0881c8, emissiveIntensity: 5.0 });
+            const fireball = new THREE.Mesh(fbGeo, fbMat);
+
+            const angle = playerYaw - FACING_OFFSET;
+            const dirX = Math.sin(angle), dirZ = Math.cos(angle);
+            // Sai à frente do peito do mago
+            fireball.position.set(player.position.x + dirX * 0.8, player.position.y + 1.2, player.position.z + dirZ * 0.8);
+
+            const light = new THREE.PointLight(0x0881c8, 2, 15); fireball.add(light);
+
+            fireball.userData = { kind: 'arcane', vx: dirX * 1.5, vz: dirZ * 1.5, life: 60 };
+            scene.add(fireball); magicParticles.push(fireball);
+        }
+
+        // ================= CONTROLES E MECÂNICAS =================
+        function handleInput(event, isDown) {
+            const key = event.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = isDown;
+            if (isDown && key === 'e') collect();
+            if (isDown && key === 'b') build();
+            if (isDown && key === 'q') castFireball();
+            if (isDown && key === 'r') drinkSpeedPotion();
+            if (isDown && key === 'f' && selectedClass === 'mago' && !isFlying) {
+                isFlying = true; flyTimer = 80; playerVelocityY = 0.5;
+            }
+        }
+
+        // Coleta o recurso ativo mais próximo de "pos" dentro de "radius". Retorna true se coletou.
+        function collectResourceAt(pos, radius) {
+            let targetId = -1, minDist = radius;
+            for (let i = 0; i < resourcesData.length; i++) {
+                if (!resourcesData[i].active) continue;
+                const dist = pos.distanceTo(resourcesData[i].pos);
+                if (dist < minDist) { minDist = dist; targetId = i; }
+            }
+            if (targetId === -1) return false;
+
+            const res = resourcesData[targetId];
+            res.active = false;
+            const zeroMat = new THREE.Matrix4().makeScale(0, 0, 0);
+            if (res.type === 'wood') {
+                inventory.wood++;
+                window.instancedData.trunks.setMatrixAt(res.index, zeroMat);
+                window.instancedData.leaves.setMatrixAt(res.index, zeroMat);
+                window.instancedData.leaves2.setMatrixAt(res.index, zeroMat);
+                window.instancedData.trunks.instanceMatrix.needsUpdate = true;
+                window.instancedData.leaves.instanceMatrix.needsUpdate = true;
+                window.instancedData.leaves2.instanceMatrix.needsUpdate = true;
+            } else {
+                inventory.stone++;
+                window.instancedData.rocks.setMatrixAt(res.index, zeroMat);
+                window.instancedData.rocks.instanceMatrix.needsUpdate = true;
+            }
+            document.getElementById('inv-wood').innerText = inventory.wood;
+            document.getElementById('inv-stone').innerText = inventory.stone;
+            return true;
+        }
+
+        function collect() { collectResourceAt(player.position, 4); }
+
+        // Efeito visual: esfera que cresce e some (explosão/brilho)
+        function spawnFlash(pos, color, size) {
+            const m = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(1, 2),
+                new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1, depthWrite: false })
+            );
+            m.position.copy(pos);
+            const light = new THREE.PointLight(color, 3, size * 6); m.add(light);
+            scene.add(m);
+            fxList.push({ mesh: m, light: light, life: 0.4, maxLife: 0.4, size: size });
+        }
+
+        // BOLA DE FOGO: mirada pela câmera, explode e coleta o recurso atingido
+        function castFireball() {
+            if (selectedClass !== 'mago' || fbCooldown > 0) return;
+            fbCooldown = FB_COOLDOWN;
+            castTimer = CAST_DURATION;
+
+            // Direção = pra onde a câmera olha (horizontal) -> você mira girando a câmera
+            const dirX = -Math.sin(camYaw), dirZ = -Math.cos(camYaw);
+            playerYaw = Math.atan2(dirX, dirZ) + FACING_OFFSET; // mago encara o alvo
+
+            const ball = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(0.55, 2),
+                new THREE.MeshStandardMaterial({ color: 0xffd060, emissive: 0xff5a10, emissiveIntensity: 4.0 })
+            );
+            ball.position.set(player.position.x + dirX * 1.0, player.position.y + 1.2, player.position.z + dirZ * 1.0);
+            const light = new THREE.PointLight(0xff6a20, 3, 18); ball.add(light);
+
+            ball.userData = { kind: 'fire', vx: dirX * 1.7, vz: dirZ * 1.7, life: 80 };
+            scene.add(ball); magicParticles.push(ball);
+        }
+
+        // POÇÃO DE VELOCIDADE: acelera por alguns segundos (com cooldown)
+        function drinkSpeedPotion() {
+            if (selectedClass !== 'mago' || speedCooldown > 0) return;
+            speedTimer = SPEED_DURATION;
+            speedCooldown = SPEED_COOLDOWN;
+            spawnFlash(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), 0x33ff99, 1.6);
+        }
+
+        function updatePowerHUD() {
+            const el = document.getElementById('power-status');
+            if (!el) return;
+            if (speedTimer > 0) { el.style.color = '#33ff99'; el.innerText = `⚡ VELOCIDADE ${speedTimer.toFixed(1)}s`; }
+            else if (speedCooldown > 0) { el.style.color = '#667b8a'; el.innerText = `Poção recarrega em ${speedCooldown.toFixed(1)}s`; }
+            else { el.innerText = ''; }
+        }
+
+        function build() {
+            if (inventory.wood > 0) {
+                inventory.wood--; document.getElementById('inv-wood').innerText = inventory.wood;
+                const block = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.5, 2.5), new THREE.MeshStandardMaterial({ color: 0x1f2833, roughness: 0.8 }));
+                
+                // Borda limpa pro bloco construído (estilo UI)
+                const edges = new THREE.LineSegments(new THREE.EdgesGeometry(block.geometry), new THREE.LineBasicMaterial({ color: 0x0881c8 }));
+                block.add(edges);
+                
+                block.castShadow = true; block.receiveShadow = true;
+                const a = playerYaw - FACING_OFFSET;
+                block.position.set(player.position.x + Math.sin(a)*4, player.position.y+4, player.position.z + Math.cos(a)*4);
+                block.userData = { size: 2.5, velocityY: 0, isGrounded: false };
+                scene.add(block); physicsBlocks.push(block);
+            }
+        }
+
+        function checkCol(a, b) { return (a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY && a.minZ < b.maxZ && a.maxZ > b.minZ); }
+        function getAABB(p, s) { return { minX: p.x-s.width/2, maxX: p.x+s.width/2, minY: p.y-s.height/2, maxY: p.y+s.height/2, minZ: p.z-s.depth/2, maxZ: p.z+s.depth/2 }; }
+        function resolveCol(ep, es, bp, bs) {
+            const e = getAABB(ep, es); const b = getAABB(bp, bs);
+            if (!checkCol(e, b)) return false;
+            const ox = Math.min(e.maxX - b.minX, b.maxX - e.minX); const oy = Math.min(e.maxY - b.minY, b.maxY - e.minY); const oz = Math.min(e.maxZ - b.minZ, b.maxZ - e.minZ);
+            if (oy < ox && oy < oz) { if (ep.y > bp.y) { ep.y += oy; playerIsGrounded = true; playerVelocityY = 0; } else { ep.y -= oy; playerVelocityY = -0.01; } }
+            else if (ox < oz) { if (ep.x > bp.x) ep.x += ox; else ep.x -= ox; } 
+            else { if (ep.z > bp.z) ep.z += oz; else ep.z -= oz; }
+            return true;
+        }
+
+        // ================= LOOP DE RENDERIZAÇÃO =================
+        let _lastFrame = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            const time = now * 0.001;
+            // Delta normalizado a 60fps: dt=1 a 60fps, ~0.5 a 120fps -> mesma velocidade em qualquer monitor
+            if (!_lastFrame) _lastFrame = now;
+            let dt = (now - _lastFrame) / 16.667;
+            _lastFrame = now;
+            dt = Math.min(dt, 3); // evita "teleporte" após travadas/abas em segundo plano
+
+            // Ondulação da água
+            if (water) water.material.uniforms['time'].value += dt / 60.0;
+
+            // Timers dos poderes (em segundos)
+            if (speedTimer > 0) speedTimer -= dt / 60;
+            if (speedCooldown > 0) speedCooldown -= dt / 60;
+            if (fbCooldown > 0) fbCooldown -= dt / 60;
+            updatePowerHUD();
+
+            // Anima Projéteis do Mago
+            for (let i = magicParticles.length - 1; i >= 0; i--) {
+                let p = magicParticles[i];
+                p.position.x += p.userData.vx * dt; p.position.z += p.userData.vz * dt; p.userData.life -= dt;
+
+                let hit = false;
+                if (p.position.y <= getTerrainHeight(p.position.x, p.position.z)) hit = true;
+
+                // Quebrando blocos físicos com a magia
+                for (let k=physicsBlocks.length-1; k>=0; k--) {
+                    if (p.position.distanceTo(physicsBlocks[k].position) < physicsBlocks[k].userData.size) {
+                        scene.remove(physicsBlocks[k]); physicsBlocks.splice(k, 1); hit = true;
+                    }
+                }
+
+                // Bola de fogo: coleta o recurso que atingir (no ar ou no chão)
+                if (p.userData.kind === 'fire' && collectResourceAt(p.position, 2.6)) hit = true;
+
+                if (p.userData.life <= 0 || hit) {
+                    if (p.userData.kind === 'fire') spawnFlash(p.position, 0xff7a20, 2.4);
+                    scene.remove(p); magicParticles.splice(i, 1);
+                }
+            }
+
+            // Efeitos visuais (explosões/brilhos que crescem e somem)
+            for (let i = fxList.length - 1; i >= 0; i--) {
+                const f = fxList[i]; f.life -= dt / 60;
+                const t = 1 - Math.max(0, f.life) / f.maxLife; // 0 -> 1
+                f.mesh.scale.setScalar(f.size * (0.3 + t));
+                f.mesh.material.opacity = Math.max(0, 1 - t);
+                if (f.light) f.light.intensity = 3 * (1 - t);
+                if (f.life <= 0) { scene.remove(f.mesh); fxList.splice(i, 1); }
+            }
+
+            // Física dos Blocos
+            physicsBlocks.forEach(block => {
+                if (!block.userData.isGrounded) {
+                    block.userData.velocityY -= GRAVITY * dt; block.position.y += block.userData.velocityY * dt;
+                    const bSize = { width: block.userData.size, height: block.userData.size, depth: block.userData.size };
+                    let tY = getTerrainHeight(block.position.x, block.position.z);
+                    if (block.position.y - bSize.height/2 <= tY) { block.position.y = tY + bSize.height/2; block.userData.isGrounded = true; }
+                    physicsBlocks.forEach(other => {
+                        if (block === other) return;
+                        if (checkCol(getAABB(block.position, bSize), getAABB(other.position, {width:other.userData.size,height:other.userData.size,depth:other.userData.size}))) {
+                            if (block.position.y > other.position.y) { block.position.y = other.position.y + other.userData.size; block.userData.isGrounded = true; }
+                        }
+                    });
+                }
+            });
+
+            if (isFlying) { flyTimer -= dt; playerVelocityY = 0.08; if (flyTimer <= 0) isFlying = false; }
+
+            // Movimento do Jogador (RELATIVO À CÂMERA: W = pra longe da câmera)
+            const speed = classesInfo[selectedClass].speed * (speedTimer > 0 ? SPEED_MULT : 1);
+            let moveF = (keys.w ? 1 : 0) - (keys.s ? 1 : 0); // frente/trás
+            let moveR = (keys.d ? 1 : 0) - (keys.a ? 1 : 0); // direita/esquerda
+            let mX = 0, mZ = 0;
+            if (moveF !== 0 || moveR !== 0) {
+                const l = Math.hypot(moveF, moveR); moveF /= l; moveR /= l; // normaliza diagonal
+                const sy = Math.sin(camYaw), cy = Math.cos(camYaw);
+                // frente = direção oposta à câmera; direita = perpendicular
+                mX = (moveF * -sy + moveR * cy) * speed;
+                mZ = (moveF * -cy + moveR * -sy) * speed;
+            }
+
+            player.position.x += mX * dt; player.position.z += mZ * dt;
+
+            const moving = (mX !== 0 || mZ !== 0);
+            if (moving) {
+                // Gira suavemente para a direção do movimento
+                const targetYaw = Math.atan2(mX, mZ) + FACING_OFFSET;
+                let diff = targetYaw - playerYaw;
+                diff = Math.atan2(Math.sin(diff), Math.cos(diff)); // menor arco
+                playerYaw += diff * (1 - Math.pow(1 - 0.22, dt));
+            }
+            // Orienta o modelo: encara playerYaw E inclina conforme a inclinação do chão
+            {
+                const px = player.position.x, pz = player.position.z, e = 1.0;
+                _gn.set(getTerrainHeight(px - e, pz) - getTerrainHeight(px + e, pz), 2 * e,
+                        getTerrainHeight(px, pz - e) - getTerrainHeight(px, pz + e)).normalize();
+                const tilt = 0.55 * (1 - flyBlend); // não inclina enquanto levita
+                _tgt.copy(_up).lerp(_gn, tilt).normalize();
+                _qa.setFromUnitVectors(_up, _tgt);
+                _qy.setFromAxisAngle(_up, playerYaw);
+                _qa.multiply(_qy);
+                humanoidModel.quaternion.slerp(_qa, 1 - Math.pow(1 - 0.18, dt));
+            }
+            // Anima: andar no chão, idle parado/voando (pra pose de levitação ficar limpa)
+            setAction((moving && !isFlying) ? actionWalk : actionIdle);
+            // Sincroniza a cadência do passo com a velocidade real (reduz "deslizar" no chão)
+            if (actionWalk) actionWalk.timeScale = (speed * 60) / WALK_REF;
+            // Avança o esqueleto (dt está normalizado a 60fps -> segundos = dt/60)
+            if (mixer) mixer.update(dt / 60);
+            // Sobrepõe poses de magia/levitação por cima da animação base
+            applyProceduralPoses(time, dt);
+
+            physicsBlocks.forEach(block => { resolveCol(player.position, playerSize, block.position, {width:block.userData.size,height:block.userData.size,depth:block.userData.size}); });
+
+            if (!playerIsGrounded && !isFlying) playerVelocityY -= GRAVITY * dt;
+            player.position.y += playerVelocityY * dt; playerIsGrounded = false;
+
+            let tY = getTerrainHeight(player.position.x, player.position.z);
+            if (player.position.y - playerSize.height/2 <= tY) { player.position.y = tY + playerSize.height/2; playerIsGrounded = true; playerVelocityY = 0; }
+            physicsBlocks.forEach(block => { resolveCol(player.position, playerSize, block.position, {width:block.userData.size,height:block.userData.size,depth:block.userData.size}); });
+            
+            if (playerIsGrounded && keys[' '] && !isFlying) { playerVelocityY = classesInfo[selectedClass].jump; playerIsGrounded = false; }
+
+            // ===== CÂMERA ORBITAL (3ª pessoa) =====
+            camDist += (camTargetDist - camDist) * (1 - Math.pow(1 - 0.15, dt)); // zoom suave
+            const cp = Math.cos(camPitch), sp = Math.sin(camPitch);
+            const ox = Math.sin(camYaw) * cp * camDist;
+            const oz = Math.cos(camYaw) * cp * camDist;
+            const oy = sp * camDist + 1.8;
+            const tx = player.position.x, ty = player.position.y, tz = player.position.z;
+            const cl = 1 - Math.pow(1 - 0.12, dt);
+            camera.position.x += (tx + ox - camera.position.x) * cl;
+            camera.position.y += (ty + oy - camera.position.y) * cl;
+            camera.position.z += (tz + oz - camera.position.z) * cl;
+            camera.lookAt(tx, ty + 1.4, tz); // mira no peito/cabeça
+
+            // Luz de preenchimento acompanha a câmera (ilumina o lado visível do personagem)
+            if (fillLight) fillLight.position.copy(camera.position);
+
+            // Renderiza com Bloom ativo
+            composer.render();
+        }
+
+        function onWindowResize() {
+            if(!camera) return;
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
 </body>
 </html>
